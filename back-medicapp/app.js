@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware de logging
 app.use((req, res, next) => {
-  console.log(${req.method} ${req.path} - ${new Date().toISOString()});
+  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
   next();
 });
 
@@ -72,7 +72,7 @@ app.use((err, req, res, next) => {
     return res.status(400).json({
       error: 'Valor duplicado',
       field: field,
-      message: El ${field} ya existe en la base de datos
+      message: `El ${field} ya existe en la base de datos`
     });
   }
 
@@ -92,9 +92,9 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log('=================================');
-      console.log(🚀 Servidor corriendo en puerto ${PORT});
-      console.log(📍 Entorno: ${process.env.NODE_ENV || 'development'});
-      console.log(🌐 URL: http://localhost:${PORT});
+      console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+      console.log(`📍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌐 URL: http://localhost:${PORT}`);
       console.log('=================================');
     });
   } catch (error) {
@@ -107,7 +107,7 @@ const startServer = async () => {
 // 🧹 Cierre graceful del servidor
 // ===============================
 const gracefulShutdown = async (signal) => {
-  console.log(\n${signal} recibido. Cerrando servidor...);
+  console.log(`\n${signal} recibido. Cerrando servidor...`);
   try {
     await database.disconnect();
     console.log('✅ Servidor cerrado correctamente');
