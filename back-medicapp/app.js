@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const database = require('./config/database');
+const cookieParser = require('cookie-parser'); // <-- 1. Importar
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,9 +11,15 @@ const PORT = process.env.PORT || 3000;
 // ===============================
 // 🧩 Middlewares base
 // ===============================
-app.use(cors());
+// 2. Configurar CORS para aceptar credenciales
+app.use(cors({
+  origin: 'http://localhost:3000', // <-- La URL de tu frontend (ajusta si es otra)
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // <-- 3. Usar el middleware
 
 // Middleware de logging
 app.use((req, res, next) => {
@@ -39,6 +46,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// 4. Asegúrate de que tus rutas de auth estén aquí
+app.use('/api/auth', require('./routes/auth.routes'));
 
 app.use((req, res) => {
   res.status(404).json({
