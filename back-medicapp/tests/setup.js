@@ -9,3 +9,14 @@ process.env.PORT = 5000;
 
 // Timeout global para tests
 jest.setTimeout(10000);
+
+// Silencia solo console.error durante los tests
+const originalError = console.error;
+beforeAll(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+afterAll(() => {
+  console.error.mockRestore?.();
+  // Por si quieres restaurar explícitamente:
+  console.error = originalError;
+});
