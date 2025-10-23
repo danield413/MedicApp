@@ -1,8 +1,11 @@
-// ... (imports)
+const { response } = require('express');
+const jwt = require('jsonwebtoken');
+const { Usuario } = require('../models/Schema');
 
 const validateJWT = async (req, res = response, next) => {
   // CAMBIO: Leer el token desde las cookies
   const token = req.cookies.token;
+  console.log('Token from cookie:', token);
 
   if (!token) {
     return res.status(401).json({

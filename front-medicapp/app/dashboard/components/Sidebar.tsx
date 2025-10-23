@@ -11,7 +11,8 @@ import {
   BellIcon, 
   PillIcon, 
   BoxIcon,
-  LogoutIcon // Make sure this is in MenuIcons.tsx
+  HistoryIcon, // <-- 1. Importa el nuevo icono
+  LogoutIcon
 } from '../components/MenuIcons'; // Adjust path if needed
 
 // Define menu items
@@ -20,8 +21,10 @@ const menuItems = [
   { href: '/dashboard/recordatorios-citas', label: 'Recordatorios Citas', icon: <CalendarIcon className="w-5 h-5" /> },
   { href: '/dashboard/recordatorios-medicamentos', label: 'Recordatorios Medicamentos', icon: <BellIcon className="w-5 h-5" /> },
   { href: '/dashboard/medicamentos', label: 'Medicamentos', icon: <PillIcon className="w-5 h-5" /> },
-  { href: '/dashboard/dosis', label: 'Dosis', icon: <PillIcon className="w-5 h-5" /> }, // Re-using icon
+  { href: '/dashboard/dosis', label: 'Dosis', icon: <PillIcon className="w-5 h-5" /> },
   { href: '/dashboard/pedidos', label: 'Pedidos', icon: <BoxIcon className="w-5 h-5" /> },
+  // 2. Añade la nueva ruta al final de la lista
+  { href: '/dashboard/historial-consumo', label: 'Historial Consumo', icon: <HistoryIcon className="w-5 h-5" /> },
 ];
 
 export const SideBar = () => {
