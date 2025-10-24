@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store";
 import { ApiError } from "@/lib"; // Puedes usar esto en tu catch si lo deseas
-import { LoginPayload } from "@/schema";
+import { LoginPayload, RegisterPayload } from "@/schema";
 
 export const useAuth = () => {
   const router = useRouter();
@@ -62,6 +62,36 @@ export const useAuth = () => {
     }
   };
 
+  const handleRegister = async (data: RegisterPayload) => {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, { // Asegúrate que API_URL esté definido
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include", 
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new ApiError(errorData.error || 'No se pudo completar el registro');
+      }
+
+      const usuario = await response.json();
+      setAuthData(usuario);
+      toast.success(`¡Registro exitoso, ${usuario.nombre}!`);
+      router.push('/dashboard');
+
+    } catch (error: any) {
+      console.error("Error en handleRegister:", error);
+      toast.error(error.message || 'Ocurrió un error inesperado');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   /**
    * Maneja el cierre de sesión del usuario
    */
@@ -96,5 +126,6 @@ export const useAuth = () => {
     handleLogin,
     handleLogout, // <-- Exportamos la nueva función
     isLoading, // Devolvemos el estado de carga
+    handleRegister,
   };
 };

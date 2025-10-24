@@ -10,6 +10,7 @@ import { useAuth } from '../../../hooks/auth/useAuth';
 import { loginSchema, LoginPayload } from '@/schema'; 
 // highlight-end
 import { EyeIcon, EyeSlashIcon } from '@/components/icons';
+import Link from 'next/link';
 
 export const AuthForm = () => {
   const [ isVisible, setIsVisible ] = useState(false);
@@ -92,6 +93,14 @@ export const AuthForm = () => {
         >
           Iniciar sesión
         </Button>
+
+         {/* Crear link para ir a registro */}
+        <div className="flex items-center justify-center text-sm">
+          <span className="text-gray-600">¿No tienes una cuenta?</span>
+         <Link href="/register" className="ml-2 font-semibold text-teal-700 hover:text-teal-600">
+            Regístrate
+          </Link>
+        </div>
       </form>
     </>
   );
