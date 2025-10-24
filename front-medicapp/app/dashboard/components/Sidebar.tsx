@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUiStore } from '../../../store/uiStore'; // Adjust path if needed
+import { useAuthStore } from '@/store';
 import { useAuth } from '@/hooks/auth/useAuth'; // Adjust path if needed
 import { 
   InfoIcon, 
@@ -31,15 +32,37 @@ export const SideBar = () => {
   const { isSidebarOpen } = useUiStore();
   const pathname = usePathname();
   const { handleLogout } = useAuth(); // Get logout function from hook
+  const authState = useAuthStore();
+  // Nombre a mostrar (soporta tanto "name" como "nombre" por compatibilidad)
+  const displayName = authState.name || (authState as unknown as { nombre?: string }).nombre || 'Usuario';
+  const subText = (authState as unknown as { cedula?: string }).cedula || '';
+  const userInitial = displayName?.[0]?.toUpperCase() || 'U';
 
   return (
     <aside className="sidebar flex h-screen flex-col overflow-y-auto bg-white dark:bg-gray-900 shadow-lg">
       
-      {/* 1. Sidebar Header */}
-      <div className="flex items-center border-b border-gray-200 p-4 dark:border-gray-700 h-16 flex-shrink-0">
-        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-          {isSidebarOpen ? 'MedicApp' : 'MA'}
-        </span>
+      {/* 1. Sidebar Header + User info */}
+      <div className="border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        {/* App title */}
+        <div className="flex items-center p-4 h-14">
+          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            {isSidebarOpen ? 'MedicApp' : 'MA'}
+          </span>
+        </div>
+        {/* User section */}
+        <div className={`flex items-center gap-3 px-4 pb-4 ${isSidebarOpen ? '' : 'justify-center'}`} title={!isSidebarOpen ? displayName : undefined}>
+          <div className="flex items-center justify-center rounded-full bg-zinc-800 text-white w-9 h-9 text-sm font-bold uppercase flex-shrink-0">
+            {userInitial}
+          </div>
+          <div className={`${isSidebarOpen ? 'flex flex-col' : 'hidden'} min-w-0`}>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+              {displayName}
+            </span>
+            {subText ? (
+              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{subText}</span>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       {/* 2. Sidebar Menu */}

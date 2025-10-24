@@ -5,17 +5,13 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
-  // 1. Lista de rutas de autenticación (login/registro)
-  const authRoutes = ['/', '/login']; 
+  const authRoutes = ['/', '/login', '/register']; // Añadir '/register'
 
-  // 2. Si el usuario NO está autenticado (no hay token) y trata de acceder a /dashboard...
   if (!token && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/', request.url)); // Redirige al login principal
   }
 
-  // 3. Si el usuario SÍ está autenticado (hay token) y trata de acceder a CUALQUIER ruta de auth...
   if (token && authRoutes.includes(pathname)) {
-    // Lo redirigimos al dashboard, porque ya inició sesión.
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -23,6 +19,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // 4. El matcher DEBE incluir '/login' para que el middleware lo revise.
-  matcher: ['/dashboard/:path*', '/', '/login'],
+  matcher: ['/dashboard/:path*', '/', '/login', '/register'], // Añadir '/register'
 };
