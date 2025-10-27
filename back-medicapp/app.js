@@ -52,6 +52,7 @@ app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/medicamentos', require('./routes/medicamento.routes.js'));
 app.use('/api/historial-consumo', require('./routes/historial.routes.js'));
 app.use('/api/dosis', require('./routes/dosis.routes.js'));
+app.use('/api/citas', require('./routes/citas.routes.js'));
 
 app.use((req, res) => {
   res.status(404).json({
