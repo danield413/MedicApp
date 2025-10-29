@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { Usuario } = require('../models/Schema');
+const { Usuario, Domiciliario } = require('../models/Schema');
 const { generarJWT } = require('../helpers/jwt');
 
 /**
@@ -24,7 +24,7 @@ const registerUser = async (userData) => {
     await usuario.save();
 
     // Generar JWT
-    const token = await generarJWT(usuario.id, usuario.cedula);
+    const token = await generarJWT(usuario.id, usuario.cedula, 'Usuario');
 
     // Devolvemos token y usuario por separado para el controlador
     return {
@@ -60,7 +60,7 @@ const loginUser = async (cedula, contrasena) => {
     }
 
     // Generar JWT
-    const token = await generarJWT(usuario.id, usuario.cedula);
+    const token = await generarJWT(usuario.id, usuario.cedula, 'Usuario');
 
     // Devolvemos token y usuario por separado para el controlador
     return {
@@ -84,7 +84,7 @@ const loginUser = async (cedula, contrasena) => {
 const renewToken = async (usuario) => {
   try {
     // Generar un nuevo JWT
-    const token = await generarJWT(usuario.id, usuario.cedula);
+   const token = await generarJWT(usuario.id, usuario.cedula, 'Usuario');
 
     // Devolvemos token y usuario por separado para el controlador
     return {
@@ -130,10 +130,46 @@ const updatePassword = async (usuario, oldPassword, newPassword) => {
   }
 };
 
+/**
+ * Loguea un domiciliario existente
+ * @param {string} cedula
+ * @param {string} contrasena
+ */
+const loginDomiciliario = async (cedula, contrasena) => {
+  try {
+    const domiciliario = await Domiciliario.findOne({ cedula });
+    if (!domiciliario) {
+      throw new Error('Cédula o contraseña incorrectas');
+    }
+
+    const validPassword = bcrypt.compareSync(contrasena, domiciliario.contrasena);
+    if (!validPassword) {
+      throw new Error('Cédula o contraseña incorrectas');
+    }
+
+    // Generar JWT con role 'Domiciliario'
+    const token = await generarJWT(domiciliario.id, domiciliario.cedula, 'Domiciliario');
+
+    return {
+      token,
+      usuario: { // Devolvemos un objeto 'usuario' genérico para el frontend
+        uid: domiciliario.id,
+        nombre: domiciliario.nombre,
+        cedula: domiciliario.cedula,
+        role: 'Domiciliario' // <-- importante
+      }
+    };
+  } catch (error) {
+    console.error('Error en loginDomiciliario service:', error);
+    throw new Error(error.message || 'Error al iniciar sesión');
+  }
+};
+
 
 module.exports = {
   registerUser,
   loginUser,
   renewToken,
   updatePassword,
+  loginDomiciliario,
 };
