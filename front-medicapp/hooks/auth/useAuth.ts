@@ -121,11 +121,42 @@ export const useAuth = () => {
     }
   };
 
+  const handleDomiciliarioLogin = async (data: LoginPayload) => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/domiciliario/login`, { // <-- Nueva URL
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      console.log("Respuesta del login Domiciliario:", response);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new ApiError(errorData.error || 'Cédula o contraseña incorrectas');
+      }
+
+      const usuario = await response.json();
+      setAuthData(usuario);
+      toast.success(`¡Bienvenido, ${usuario.nombre}!`);
+      router.push('/domiciliario/dashboard'); // <-- Redirigir al dashboard de domiciliario
+    } catch (error: any) {
+      console.error("Error en login Domiciliario:", error);
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return {
     handleLogin,
     handleLogout, // <-- Exportamos la nueva función
     isLoading, // Devolvemos el estado de carga
     handleRegister,
+    handleDomiciliarioLogin
   };
 };

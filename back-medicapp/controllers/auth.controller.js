@@ -1,6 +1,18 @@
 const { response } = require('express');
 const authService = require('../services/auth.service');
 
+
+const loginDomiciliario = async (req, res = response) => {
+  const { cedula, contrasena } = req.body;
+  try {
+    const { token, usuario } = await authService.loginDomiciliario(cedula, contrasena);
+    setTokenCookie(res, token);
+    return res.status(200).json(usuario);
+  } catch (error) {
+    return handleServiceError(res, error, 400);
+  }
+};
+
 /**
  * Helper para manejar errores de servicio de forma centralizada
  * @param {response} res - Objeto de respuesta de Express
@@ -121,4 +133,5 @@ module.exports = {
   renew,
   newPassword, // <-- Aquí está la función que faltaba
   logout,
+  loginDomiciliario
 };

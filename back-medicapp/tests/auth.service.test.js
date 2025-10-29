@@ -380,7 +380,7 @@ describe('authService.loginUser', () => {
 
     expect(Usuario.findOne).toHaveBeenCalledWith({ cedula });
     expect(bcrypt.compareSync).toHaveBeenCalledWith(contrasena, testUser.contrasena);
-    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula);
+    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula, 'Usuario');
     expect(result).toHaveProperty('token', 'test-token');
     expect(result.usuario).toHaveProperty('cedula', cedula);
   });
@@ -412,7 +412,7 @@ describe('authService.renewToken', () => {
 
     const result = await authService.renewToken(testUser);
 
-    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula);
+    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula, 'Usuario');
     expect(result).toHaveProperty('token', 'new-test-token');
     expect(result.usuario).toHaveProperty('uid', testUser.id);
   });
