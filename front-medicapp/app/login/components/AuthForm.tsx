@@ -45,7 +45,7 @@ export const AuthForm = () => {
           placeholder="Ingresa tu número de cédula"
           isInvalid={!!errors.cedula}
           errorMessage={errors.cedula?.message}
-          value="1234567890"
+          // value="1234567890"
         />
         {/* highlight-end */}
 
@@ -63,7 +63,7 @@ export const AuthForm = () => {
             // highlight-start
             isInvalid={!!errors.contrasena}
             errorMessage={errors.contrasena?.message}
-            value="password123"
+            // value="password123"
             // highlight-end
             endContent={
               <button
