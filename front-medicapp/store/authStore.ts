@@ -12,6 +12,7 @@ interface AuthState extends Omit<PayloadUser, 'permissions' | 'menus'> {
   menus: PayloadUser['menus'];
   isSuperAdmin: boolean;
   isAuthenticated: boolean;
+  userId: string; // ID del usuario para consultas
   setAuthData: (data: PayloadUser | null) => void;
   clearAuthData: () => void;
 }
@@ -25,6 +26,8 @@ const initialState = {
   menus: [],
   isAuthenticated: false,
   isSuperAdmin: false,
+  userId: '',
+  uid: '',
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -42,6 +45,8 @@ export const useAuthStore = create<AuthState>()(
           permissions: new Set(data?.permissions), // Convertimos el array a Set.
           isAuthenticated: !!data?.id,
           isSuperAdmin: data?.companyId === process.env.NEXT_PUBLIC_SUPER_ADMIN_COMPANY_ID,
+          id: data?.id || '',
+          userId: data?.uid || '', // Guardamos el ID del usuario
         }),
 
       /**

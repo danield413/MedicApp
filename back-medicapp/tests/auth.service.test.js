@@ -117,6 +117,245 @@ describe('authService.registerUser', () => {
 
     await expect(authService.registerUser(userData)).rejects.toThrow('Un usuario ya existe con esa cédula');
   });
+
+  test('Debe encriptar la contraseña antes de guardar', async () => {
+    const userData = {
+      cedula: '9876543210',
+      contrasena: 'PlainTextPassword123!',
+      nombre: 'María',
+      apellidos: 'González',
+      celular: '3009876543'
+    };
+
+    const salt = 'test-salt-value';
+    const hashedPassword = 'super-secure-hashed-password';
+
+    // Mock de la base de datos
+    Usuario.findOne = jest.fn().mockResolvedValue(null);
+    
+    // Mock de bcrypt
+    bcrypt.genSaltSync.mockReturnValue(salt);
+    bcrypt.hashSync.mockReturnValue(hashedPassword);
+
+    // Mock de JWT
+    generarJWT.mockResolvedValue('jwt-token-123');
+
+    // Mock del constructor y save
+    const saveMock = jest.fn().mockResolvedValue(true);
+    const userInstance = { ...userData, contrasena: hashedPassword, id: 'user-id-123', save: saveMock };
+    // @ts-ignore
+    Usuario.prototype.save = saveMock;
+    // @ts-ignore
+    jest.spyOn(mongoose, 'model').mockImplementation(() => function() {
+      return userInstance;
+    });
+
+    const result = await authService.registerUser(userData);
+
+    // Verificar que se llamó a genSaltSync
+    expect(bcrypt.genSaltSync).toHaveBeenCalled();
+    
+    // Verificar que se encriptó la contraseña con el salt correcto
+    expect(bcrypt.hashSync).toHaveBeenCalledWith(userData.contrasena, salt);
+    
+    // Verificar que NO se guarda la contraseña en texto plano
+    expect(bcrypt.hashSync).not.toHaveBeenCalledWith(hashedPassword, expect.anything());
+    
+    // Verificar que el resultado contiene token y datos de usuario
+    expect(result.token).toBe('jwt-token-123');
+    expect(result.usuario).toBeDefined();
+    expect(result.usuario.nombre).toBe(userData.nombre);
+  });
+
+  test('Debe devolver el token JWT y los datos del usuario registrado', async () => {
+    const userData = {
+      cedula: '5555555555',
+      contrasena: 'SecurePass789!',
+      nombre: 'Carlos',
+      apellidos: 'Ramírez López',
+      celular: '3005551234'
+    };
+
+    const userId = new mongoose.Types.ObjectId().toString();
+    const expectedToken = 'generated-jwt-token-xyz';
+
+    // Mock de la base de datos
+    Usuario.findOne = jest.fn().mockResolvedValue(null);
+    
+    // Mock de bcrypt
+    bcrypt.genSaltSync.mockReturnValue('salt');
+    bcrypt.hashSync.mockReturnValue('hashed-password');
+
+    // Mock de JWT
+    generarJWT.mockResolvedValue(expectedToken);
+
+    // Mock del constructor y save
+    const saveMock = jest.fn().mockResolvedValue(true);
+    const userInstance = { 
+      ...userData, 
+      id: userId, 
+      contrasena: 'hashed-password', 
+      save: saveMock 
+    };
+    // @ts-ignore
+    Usuario.prototype.save = saveMock;
+    // @ts-ignore
+    jest.spyOn(mongoose, 'model').mockImplementation(() => function() {
+      return userInstance;
+    });
+
+    const result = await authService.registerUser(userData);
+
+    // Verificar estructura de respuesta
+    expect(result).toHaveProperty('token', expectedToken);
+    expect(result).toHaveProperty('usuario');
+    expect(result.usuario).toHaveProperty('uid');
+    expect(result.usuario).toHaveProperty('nombre', userData.nombre);
+    expect(result.usuario).toHaveProperty('cedula', userData.cedula);
+
+    // Verificar que se generó el JWT con los parámetros correctos
+    expect(generarJWT).toHaveBeenCalled();
+    const [callUserId, callCedula] = generarJWT.mock.calls[0];
+    expect(callCedula).toBe(userData.cedula);
+  });
+
+  test('Debe manejar campos adicionales del usuario', async () => {
+    const userData = {
+      cedula: '7777777777',
+      contrasena: 'TestPass456!',
+      nombre: 'Ana',
+      apellidos: 'Martínez Silva',
+      celular: '3007778899',
+      fechaNacimiento: '1990-05-15',
+      direccion: 'Calle 123 #45-67'
+    };
+
+    // Mock de la base de datos
+    Usuario.findOne = jest.fn().mockResolvedValue(null);
+    
+    // Mock de bcrypt
+    bcrypt.genSaltSync.mockReturnValue('salt');
+    bcrypt.hashSync.mockReturnValue('hashed-password');
+
+    // Mock de JWT
+    generarJWT.mockResolvedValue('token-abc');
+
+    // Mock del constructor y save
+    const saveMock = jest.fn().mockResolvedValue(true);
+    const userInstance = { 
+      ...userData, 
+      id: 'user-id-789',
+      contrasena: 'hashed-password', 
+      save: saveMock 
+    };
+    // @ts-ignore
+    Usuario.prototype.save = saveMock;
+    // @ts-ignore
+    jest.spyOn(mongoose, 'model').mockImplementation(() => function() {
+      return userInstance;
+    });
+
+    const result = await authService.registerUser(userData);
+
+    // Verificar que se guardó correctamente
+    expect(saveMock).toHaveBeenCalled();
+    expect(result).toHaveProperty('token');
+    expect(result).toHaveProperty('usuario');
+  });
+
+  test('Debe lanzar un error si falla la generación del JWT', async () => {
+    const userData = {
+      cedula: '8888888888',
+      contrasena: 'Password999!',
+      nombre: 'Luis',
+      apellidos: 'Fernández',
+      celular: '3008889900'
+    };
+
+    // Mock de la base de datos
+    Usuario.findOne = jest.fn().mockResolvedValue(null);
+    
+    // Mock de bcrypt
+    bcrypt.genSaltSync.mockReturnValue('salt');
+    bcrypt.hashSync.mockReturnValue('hashed-password');
+
+    // Mock de JWT que falla
+    generarJWT.mockRejectedValue(new Error('Error al generar JWT'));
+
+    // Mock del constructor y save
+    const saveMock = jest.fn().mockResolvedValue(true);
+    const userInstance = { 
+      ...userData, 
+      id: 'user-id-fail',
+      contrasena: 'hashed-password', 
+      save: saveMock 
+    };
+    // @ts-ignore
+    Usuario.prototype.save = saveMock;
+    // @ts-ignore
+    jest.spyOn(mongoose, 'model').mockImplementation(() => function() {
+      return userInstance;
+    });
+
+    await expect(authService.registerUser(userData)).rejects.toThrow('Error al generar JWT');
+  });
+
+  test('Debe lanzar un error si falla al guardar en la base de datos', async () => {
+    const userData = {
+      cedula: '9999999999',
+      contrasena: 'Password000!',
+      nombre: 'Pedro',
+      apellidos: 'Díaz',
+      celular: '3009990011'
+    };
+
+    // Mock de la base de datos
+    Usuario.findOne = jest.fn().mockResolvedValue(null);
+    
+    // Mock de bcrypt
+    bcrypt.genSaltSync.mockReturnValue('salt');
+    bcrypt.hashSync.mockReturnValue('hashed-password');
+
+    // Mock del constructor y save que falla
+    const saveMock = jest.fn().mockRejectedValue(new Error('Error de base de datos'));
+    // @ts-ignore
+    Usuario.prototype.save = saveMock;
+    // @ts-ignore
+    jest.spyOn(mongoose, 'model').mockImplementation(() => function() {
+      return { ...userData, contrasena: 'hashed-password', save: saveMock };
+    });
+
+    await expect(authService.registerUser(userData)).rejects.toThrow();
+  });
+
+  test('Debe validar que la cédula sea única en la base de datos', async () => {
+    const cedulaExistente = '1111111111';
+    const userData = {
+      cedula: cedulaExistente,
+      contrasena: 'NewPassword123!',
+      nombre: 'Nuevo',
+      apellidos: 'Usuario',
+      celular: '3001112233'
+    };
+
+    // Mock para simular que ya existe un usuario con esa cédula
+    const usuarioExistente = {
+      id: 'existing-user-id',
+      cedula: cedulaExistente,
+      nombre: 'Usuario Existente',
+      apellidos: 'Apellido Existente',
+    };
+    Usuario.findOne = jest.fn().mockResolvedValue(usuarioExistente);
+
+    await expect(authService.registerUser(userData)).rejects.toThrow('Un usuario ya existe con esa cédula');
+    
+    // Verificar que se buscó al usuario por cédula
+    expect(Usuario.findOne).toHaveBeenCalledWith({ cedula: cedulaExistente });
+    
+    // Verificar que NO se intentó guardar nada
+    expect(bcrypt.hashSync).not.toHaveBeenCalled();
+    expect(generarJWT).not.toHaveBeenCalled();
+  });
 });
 
 // ============================================================================
@@ -141,7 +380,7 @@ describe('authService.loginUser', () => {
 
     expect(Usuario.findOne).toHaveBeenCalledWith({ cedula });
     expect(bcrypt.compareSync).toHaveBeenCalledWith(contrasena, testUser.contrasena);
-    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula);
+    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula, 'Usuario');
     expect(result).toHaveProperty('token', 'test-token');
     expect(result.usuario).toHaveProperty('cedula', cedula);
   });
@@ -173,7 +412,7 @@ describe('authService.renewToken', () => {
 
     const result = await authService.renewToken(testUser);
 
-    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula);
+    expect(generarJWT).toHaveBeenCalledWith(testUser.id, testUser.cedula, 'Usuario');
     expect(result).toHaveProperty('token', 'new-test-token');
     expect(result.usuario).toHaveProperty('uid', testUser.id);
   });

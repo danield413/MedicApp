@@ -6,7 +6,8 @@ const {
   login, 
   logout,
   renew, 
-  newPassword 
+  newPassword,
+  loginDomiciliario
 } = require('../controllers/auth.controller');
 
 // 2. Importar el middleware de JWT
@@ -31,5 +32,7 @@ router.get('/renew', validateJWT, renew);
 
 // 7. Ruta para cambiar la contraseña (protegida)
 router.post('/new-password', validateJWT, newPassword);
+
+router.post('/domiciliario/login', loginDomiciliario);
 
 module.exports = router;

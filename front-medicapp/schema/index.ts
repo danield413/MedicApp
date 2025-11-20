@@ -1,11 +1,9 @@
 // schema/index.ts
 
 export * from './authSchema';
-export * from './userSchema';
-export * from './roleSchema';
-export * from './contractorSchema';
-export * from './contractSchema';
-export * from './reportSchema';
-export * from './companySchema';
-export * from './orgUnitSchema';
+export * from './registerSchema';
+export * from './historialConsumoSchema';
 // Añadiremos más esquemas (como el de Compañía) aquí.
+// front-medicapp/schema/index.ts
+// ... otros exports
+export * from './perfilSchema';
