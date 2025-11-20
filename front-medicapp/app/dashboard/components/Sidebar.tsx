@@ -12,7 +12,8 @@ import {
   BellIcon, 
   PillIcon, 
   BoxIcon,
-  HistoryIcon, // <-- 1. Importa el nuevo icono
+  HistoryIcon,
+  FileTextIcon, // <-- Importa el icono de fórmulas
   LogoutIcon
 } from '../components/MenuIcons'; // Adjust path if needed
 
@@ -23,8 +24,8 @@ const menuItems = [
   { href: '/dashboard/recordatorios-medicamentos', label: 'Recordatorios Medicamentos', icon: <BellIcon className="w-5 h-5" /> },
   { href: '/dashboard/medicamentos', label: 'Medicamentos', icon: <PillIcon className="w-5 h-5" /> },
   { href: '/dashboard/dosis', label: 'Dosis', icon: <PillIcon className="w-5 h-5" /> },
+  { href: '/dashboard/formulas', label: 'Fórmulas Médicas', icon: <FileTextIcon className="w-5 h-5" /> }, // <-- Nueva ruta
   { href: '/dashboard/pedidos', label: 'Pedidos', icon: <BoxIcon className="w-5 h-5" /> },
-  // 2. Añade la nueva ruta al final de la lista
   { href: '/dashboard/historial-consumo', label: 'Historial Consumo', icon: <HistoryIcon className="w-5 h-5" /> },
 ];
 

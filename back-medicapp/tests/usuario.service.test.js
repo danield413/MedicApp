@@ -1,166 +1,444 @@
-// back-medicapp/tests/usuario.service.test.js
 const mongoose = require('mongoose');
-const { Usuario, ResumenMedico } = require('../models/Schema');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 const usuarioService = require('../services/usuario.service');
+const { Usuario, ResumenMedico } = require('../models/Schema');
 
-// Mockear los modelos
-jest.mock('../models/Schema', () => ({
-  Usuario: {
-    findById: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
-  },
-  ResumenMedico: {
-    findById: jest.fn(),
-  },
-}));
+let mongoServer;
 
-// Mockear el 'save' del prototipo de ResumenMedico
-const mockResumenMedicoSave = jest.fn().mockResolvedValue(true);
-ResumenMedico.prototype.save = mockResumenMedicoSave;
+// Configuración antes de todas las pruebas
+beforeAll(async () => {
+  try {
+    mongoServer = await MongoMemoryServer.create();
+    const mongoUri = mongoServer.getUri();
+    await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+  } catch (error) {
+    console.error('Error al iniciar MongoDB Memory Server:', error);
+    throw error;
+  }
+}, 60000);
 
+// Limpiar después de cada prueba
+afterEach(async () => {
+  try {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      await collections[key].deleteMany({});
+    }
+  } catch (error) {
+    console.error('Error al limpiar colecciones:', error);
+  }
+});
 
-describe('usuarioService', () => {
+// Cerrar conexión después de todas las pruebas
+afterAll(async () => {
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.dropDatabase();
+      await mongoose.connection.close();
+    }
+    if (mongoServer) {
+      await mongoServer.stop({ doCleanup: true });
+    }
+  } catch (error) {
+    console.error('Error al cerrar conexiones:', error);
+  }
+}, 60000);
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+describe('Usuario Service Tests', () => {
 
-  // --- Tests para actualizarInfoBasica ---
   describe('actualizarInfoBasica', () => {
-    test('Debe actualizar la información básica del usuario', async () => {
-      const usuarioId = new mongoose.Types.ObjectId().toString();
-      const datos = {
-        nombre: 'Juan',
-        apellidos: 'Perez',
-        celular: '3001234567',
-        direccion: 'Calle 123'
-      };
-      const mockUsuarioActualizado = { _id: usuarioId, ...datos };
-
-      // Simular el encadenamiento de .select()
-      Usuario.findByIdAndUpdate.mockReturnValue({
-        select: jest.fn().mockResolvedValue(mockUsuarioActualizado)
+    it('debería actualizar información básica del usuario', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Pedro',
+        apellidos: 'Díaz',
+        cedula: '6677889900',
+        celular: '3006677889',
+        contrasena: 'password654',
+        direccion: 'Calle 1 #2-3'
       });
 
-      const result = await usuarioService.actualizarInfoBasica(usuarioId, datos);
+      const datosActualizar = {
+        nombre: 'Pedro Antonio',
+        direccion: 'Carrera 10 #20-30',
+        tipoSangre: 'A+'
+      };
 
-      expect(Usuario.findByIdAndUpdate).toHaveBeenCalledWith(
-        usuarioId,
-        { $set: expect.any(Object) },
-        { new: true, runValidators: true }
+      const usuarioActualizado = await usuarioService.actualizarInfoBasica(
+        usuario._id,
+        datosActualizar
       );
-      expect(Usuario.findByIdAndUpdate().select).toHaveBeenCalledWith('-contrasena');
-      expect(result).toEqual(mockUsuarioActualizado);
+
+      expect(usuarioActualizado).toBeDefined();
+      expect(usuarioActualizado.nombre).toBe('Pedro Antonio');
+      expect(usuarioActualizado.direccion).toBe('Carrera 10 #20-30');
+      expect(usuarioActualizado.tipoSangre).toBe('A+');
+      expect(usuarioActualizado.cedula).toBe('6677889900');
+      expect(usuarioActualizado.contrasena).toBeUndefined();
     });
 
-    test('Debe lanzar un error si el usuario no se encuentra', async () => {
-      Usuario.findByIdAndUpdate.mockReturnValue({
-        select: jest.fn().mockResolvedValue(null)
+    it('debería lanzar error si el usuario no existe', async () => {
+      const usuarioId = new mongoose.Types.ObjectId();
+      
+      await expect(
+        usuarioService.actualizarInfoBasica(usuarioId, { nombre: 'Test' })
+      ).rejects.toThrow('Usuario no encontrado');
+    });
+
+    it('debería actualizar solo los campos permitidos', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Laura',
+        apellidos: 'Herrera',
+        cedula: '9988776655',
+        celular: '3009988776',
+        contrasena: 'password987',
+        fechaNacimiento: new Date('1995-06-10'),
+        ciudadNacimiento: 'Cali'
       });
 
-      await expect(usuarioService.actualizarInfoBasica('id-falso', {}))
-        .rejects.toThrow('Usuario no encontrado');
+      const datosActualizar = {
+        nombre: 'Laura María',
+        apellidos: 'Herrera González',
+        celular: '3101234567',
+        fechaNacimiento: new Date('1995-06-10'),
+        ciudadNacimiento: 'Medellín',
+        ciudadResidencia: 'Bogotá',
+        direccion: 'Carrera 50 #30-20',
+        tipoSangre: 'B+'
+      };
+
+      const usuarioActualizado = await usuarioService.actualizarInfoBasica(
+        usuario._id,
+        datosActualizar
+      );
+
+      expect(usuarioActualizado.nombre).toBe('Laura María');
+      expect(usuarioActualizado.apellidos).toBe('Herrera González');
+      expect(usuarioActualizado.celular).toBe('3101234567');
+      expect(usuarioActualizado.ciudadNacimiento).toBe('Medellín');
+      expect(usuarioActualizado.ciudadResidencia).toBe('Bogotá');
+      expect(usuarioActualizado.direccion).toBe('Carrera 50 #30-20');
+      expect(usuarioActualizado.tipoSangre).toBe('B+');
+      expect(usuarioActualizado.cedula).toBe('9988776655');
+    });
+
+    it('debería ignorar campos que no están en la lista de actualizables', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Carlos',
+        apellidos: 'Ramírez',
+        cedula: '1122334455',
+        celular: '3001122334',
+        contrasena: 'password789'
+      });
+
+      const datosActualizar = {
+        nombre: 'Carlos Alberto',
+        cedula: '0000000000',
+        contrasena: 'nueva_contraseña',
+        formulas: ['fake_id'],
+        citas: ['fake_id']
+      };
+
+      const usuarioActualizado = await usuarioService.actualizarInfoBasica(
+        usuario._id,
+        datosActualizar
+      );
+
+      expect(usuarioActualizado.nombre).toBe('Carlos Alberto');
+      expect(usuarioActualizado.cedula).toBe('1122334455');
+    });
+
+    it('debería actualizar solo algunos campos sin afectar los demás', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Ana',
+        apellidos: 'Gómez',
+        cedula: '5544332211',
+        celular: '3005544332',
+        contrasena: 'password321',
+        direccion: 'Calle Original',
+        tipoSangre: 'O+'
+      });
+
+      const datosActualizar = {
+        celular: '3109876543'
+      };
+
+      const usuarioActualizado = await usuarioService.actualizarInfoBasica(
+        usuario._id,
+        datosActualizar
+      );
+
+      expect(usuarioActualizado.celular).toBe('3109876543');
+      expect(usuarioActualizado.nombre).toBe('Ana');
+      expect(usuarioActualizado.direccion).toBe('Calle Original');
+      expect(usuarioActualizado.tipoSangre).toBe('O+');
     });
   });
 
-  // --- Tests para actualizarResumenMedico ---
+  describe('obtenerInfoBasica', () => {
+    it('debería obtener la información básica del usuario', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'María',
+        apellidos: 'López Pérez',
+        cedula: '9876543210',
+        celular: '3009876543',
+        contrasena: 'password456',
+        fechaNacimiento: new Date('1992-03-20'),
+        ciudadNacimiento: 'Cartagena',
+        ciudadResidencia: 'Barranquilla',
+        direccion: 'Avenida 5 #10-20',
+        tipoSangre: 'AB+'
+      });
+
+      const infoBasica = await usuarioService.obtenerInfoBasica(usuario._id);
+
+      expect(infoBasica).toBeDefined();
+      expect(infoBasica.nombre).toBe('María');
+      expect(infoBasica.apellidos).toBe('López Pérez');
+      expect(infoBasica.cedula).toBe('9876543210');
+      expect(infoBasica.celular).toBe('3009876543');
+      expect(infoBasica.tipoSangre).toBe('AB+');
+      expect(infoBasica.contrasena).toBeUndefined();
+      expect(infoBasica.resumenMedico).toBeUndefined();
+    });
+
+    it('debería lanzar error si el usuario no existe', async () => {
+      const usuarioId = new mongoose.Types.ObjectId();
+
+      await expect(
+        usuarioService.obtenerInfoBasica(usuarioId)
+      ).rejects.toThrow('Usuario no encontrado');
+    });
+
+    it('debería obtener usuario con campos opcionales vacíos', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Roberto',
+        apellidos: 'Vargas',
+        cedula: '1122998877',
+        celular: '3001122998',
+        contrasena: 'password357'
+      });
+
+      const infoBasica = await usuarioService.obtenerInfoBasica(usuario._id);
+
+      expect(infoBasica).toBeDefined();
+      expect(infoBasica.nombre).toBe('Roberto');
+      expect(infoBasica.fechaNacimiento).toBeUndefined();
+      expect(infoBasica.ciudadNacimiento).toBeUndefined();
+      expect(infoBasica.tipoSangre).toBeUndefined();
+    });
+  });
+
   describe('actualizarResumenMedico', () => {
-    const usuarioId = new mongoose.Types.ObjectId().toString();
-    const mockUsuario = {
-      _id: usuarioId,
-      resumenMedico: new mongoose.Types.ObjectId().toString(),
-      save: jest.fn().mockResolvedValue(true)
-    };
+    it('debería crear un resumen médico si no existe', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Sofía',
+        apellidos: 'Ruiz',
+        cedula: '4455667788',
+        celular: '3004455667',
+        contrasena: 'password147'
+      });
 
-    test('Debe actualizar un resumen médico existente', async () => {
-      const descripcion = 'Nueva descripción';
-      const mockResumen = {
-        _id: mockUsuario.resumenMedico,
-        usuario: usuarioId,
-        descripcion: 'Vieja',
-        fechaActualizacion: new Date(),
-        save: jest.fn().mockResolvedValue(true)
-      };
+      const descripcion = 'Paciente con hipertensión controlada. Última medición: 120/80 mmHg.';
 
-      Usuario.findById.mockResolvedValue(mockUsuario);
-      ResumenMedico.findById.mockResolvedValue(mockResumen);
+      const resumen = await usuarioService.actualizarResumenMedico(
+        usuario._id,
+        descripcion
+      );
 
-      const result = await usuarioService.actualizarResumenMedico(usuarioId, descripcion);
+      expect(resumen).toBeDefined();
+      expect(resumen.descripcion).toBe(descripcion);
+      expect(resumen.usuario.toString()).toBe(usuario._id.toString());
+      expect(resumen.fechaActualizacion).toBeDefined();
+      expect(resumen.fechaActualizacion).toBeInstanceOf(Date);
 
-      expect(Usuario.findById).toHaveBeenCalledWith(usuarioId);
-      expect(ResumenMedico.findById).toHaveBeenCalledWith(mockUsuario.resumenMedico);
-      expect(mockResumen.descripcion).toBe(descripcion); // Verifica que se cambió
-      expect(mockResumen.save).toHaveBeenCalled(); // Verifica que se guardó
-      expect(result).toEqual(mockResumen);
+      const usuarioActualizado = await Usuario.findById(usuario._id);
+      expect(usuarioActualizado.resumenMedico).toBeDefined();
+      expect(usuarioActualizado.resumenMedico.toString()).toBe(resumen._id.toString());
     });
 
-    test('Debe crear un resumen médico si no existe', async () => {
-      const descripcion = 'Descripción inicial';
-      const mockUsuarioSinResumen = {
-        _id: usuarioId,
-        resumenMedico: null,
-        save: jest.fn().mockResolvedValue(true)
-      };
-      
-      const mockNuevoResumen = {
-        _id: new mongoose.Types.ObjectId(),
-        usuario: usuarioId,
-        descripcion: descripcion,
-        fechaActualizacion: expect.any(Date),
-        save: mockResumenMedicoSave // Usa el mock del prototipo
-      };
+    it('debería actualizar un resumen médico existente', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Diego',
+        apellidos: 'Navarro',
+        cedula: '7788990011',
+        celular: '3007788990',
+        contrasena: 'password258'
+      });
 
-      // Mockear 'new ResumenMedico()'
-      // Cuando se llame a new ResumenMedico, jest usará esta implementación
-      jest.spyOn(ResumenMedico.prototype, 'constructor').mockImplementation(() => mockNuevoResumen);
-      
-      Usuario.findById.mockResolvedValue(mockUsuarioSinResumen);
-      ResumenMedico.findById.mockResolvedValue(null); // No encuentra resumen
-      mockResumenMedicoSave.mockResolvedValue(mockNuevoResumen); // El save devuelve el doc
+      const resumenInicial = await ResumenMedico.create({
+        usuario: usuario._id,
+        descripcion: 'Descripción inicial del historial médico',
+        fechaActualizacion: new Date('2024-01-01')
+      });
 
-      const result = await usuarioService.actualizarResumenMedico(usuarioId, descripcion);
-      
-      expect(Usuario.findById).toHaveBeenCalledWith(usuarioId);
-      expect(ResumenMedico.findById).toHaveBeenCalledWith(null);
-      expect(mockResumenMedicoSave).toHaveBeenCalled(); // Se llamó a save() en la nueva instancia
-      expect(mockUsuarioSinResumen.resumenMedico).toBe(result._id); // Se asignó el ID al usuario
-      expect(mockUsuarioSinResumen.save).toHaveBeenCalled(); // Se guardó el usuario
-      expect(result.descripcion).toBe(descripcion);
+      usuario.resumenMedico = resumenInicial._id;
+      await usuario.save();
+
+      const nuevaDescripcion = 'Descripción actualizada: paciente recuperado de cirugía. Control post-operatorio exitoso.';
+
+      const resumenActualizado = await usuarioService.actualizarResumenMedico(
+        usuario._id,
+        nuevaDescripcion
+      );
+
+      expect(resumenActualizado).toBeDefined();
+      expect(resumenActualizado.descripcion).toBe(nuevaDescripcion);
+      expect(resumenActualizado._id.toString()).toBe(resumenInicial._id.toString());
+      expect(resumenActualizado.fechaActualizacion.getTime()).toBeGreaterThan(
+        new Date('2024-01-01').getTime()
+      );
+    });
+
+    it('debería lanzar error si el usuario no existe', async () => {
+      const usuarioId = new mongoose.Types.ObjectId();
+
+      await expect(
+        usuarioService.actualizarResumenMedico(usuarioId, 'Descripción de prueba')
+      ).rejects.toThrow('Usuario no encontrado');
+    });
+
+    it('debería actualizar la fecha de actualización cada vez', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Valentina',
+        apellidos: 'Silva',
+        cedula: '2233445566',
+        celular: '3002233445',
+        contrasena: 'password741'
+      });
+
+      const resumen1 = await usuarioService.actualizarResumenMedico(
+        usuario._id,
+        'Primera descripción'
+      );
+      const fecha1 = resumen1.fechaActualizacion;
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const resumen2 = await usuarioService.actualizarResumenMedico(
+        usuario._id,
+        'Segunda descripción actualizada'
+      );
+      const fecha2 = resumen2.fechaActualizacion;
+
+      expect(fecha2.getTime()).toBeGreaterThan(fecha1.getTime());
+      expect(resumen2.descripcion).toBe('Segunda descripción actualizada');
+    });
+
+    it('debería lanzar error con descripción vacía si es requerida', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Fernando',
+        apellidos: 'Castro',
+        cedula: '9900112233',
+        celular: '3009900112',
+        contrasena: 'password159'
+      });
+
+      await expect(
+        usuarioService.actualizarResumenMedico(usuario._id, '')
+      ).rejects.toThrow();
+    });
+
+    it('debería crear resumen médico con descripción válida mínima', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Camila',
+        apellidos: 'Rojas',
+        cedula: '5566778899',
+        celular: '3005566778',
+        contrasena: 'password246'
+      });
+
+      const descripcion = 'Sin antecedentes relevantes';
+
+      const resumen = await usuarioService.actualizarResumenMedico(
+        usuario._id,
+        descripcion
+      );
+
+      expect(resumen).toBeDefined();
+      expect(resumen.descripcion).toBe(descripcion);
+      expect(resumen.descripcion.length).toBeGreaterThan(0);
     });
   });
-  
-  // --- Tests para getResumenMedico ---
+
   describe('getResumenMedico', () => {
-     test('Debe devolver el resumen médico populado', async () => {
-        const usuarioId = new mongoose.Types.ObjectId().toString();
-        const mockResumen = { _id: new mongoose.Types.ObjectId(), descripcion: 'Test' };
-        const mockUsuario = {
-            _id: usuarioId,
-            resumenMedico: mockResumen
-        };
-        
-        Usuario.findById.mockReturnValue({
-            populate: jest.fn().mockResolvedValue(mockUsuario)
-        });
-        
-        const result = await usuarioService.getResumenMedico(usuarioId);
-        
-        expect(Usuario.findById).toHaveBeenCalledWith(usuarioId);
-        expect(Usuario.findById().populate).toHaveBeenCalledWith('resumenMedico');
-        expect(result).toEqual(mockResumen);
-     });
-     
-     test('Debe devolver un objeto vacío si no hay resumen', async () => {
-        const usuarioId = new mongoose.Types.ObjectId().toString();
-        const mockUsuario = { _id: usuarioId, resumenMedico: null };
-        
-        Usuario.findById.mockReturnValue({
-            populate: jest.fn().mockResolvedValue(mockUsuario)
-        });
-        
-        const result = await usuarioService.getResumenMedico(usuarioId);
-        
-        expect(result).toEqual({ descripcion: '', _id: null });
-     });
+    it('debería obtener el resumen médico del usuario', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Ricardo',
+        apellidos: 'Mendoza',
+        cedula: '3344556677',
+        celular: '3003344556',
+        contrasena: 'password369'
+      });
+
+      const resumen = await ResumenMedico.create({
+        usuario: usuario._id,
+        descripcion: 'Paciente diabético tipo 2. Tratamiento con Metformina 850mg.',
+        fechaActualizacion: new Date()
+      });
+
+      usuario.resumenMedico = resumen._id;
+      await usuario.save();
+
+      const resumenObtenido = await usuarioService.getResumenMedico(usuario._id);
+
+      expect(resumenObtenido).toBeDefined();
+      expect(resumenObtenido.descripcion).toBe('Paciente diabético tipo 2. Tratamiento con Metformina 850mg.');
+      expect(resumenObtenido._id.toString()).toBe(resumen._id.toString());
+      expect(resumenObtenido.usuario.toString()).toBe(usuario._id.toString());
+    });
+
+    it('debería retornar objeto por defecto si no hay resumen médico', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Gabriela',
+        apellidos: 'Reyes',
+        cedula: '4433221100',
+        celular: '3004433221',
+        contrasena: 'password753'
+      });
+
+      const resumenObtenido = await usuarioService.getResumenMedico(usuario._id);
+
+      expect(resumenObtenido).toBeDefined();
+      expect(resumenObtenido.descripcion).toBe('');
+      expect(resumenObtenido._id).toBeNull();
+    });
+
+    it('debería lanzar error si el usuario no existe', async () => {
+      const usuarioId = new mongoose.Types.ObjectId();
+
+      await expect(
+        usuarioService.getResumenMedico(usuarioId)
+      ).rejects.toThrow();
+    });
+
+    it('debería retornar el resumen médico populado correctamente', async () => {
+      const usuario = await Usuario.create({
+        nombre: 'Andrés',
+        apellidos: 'Torres',
+        cedula: '8899001122',
+        celular: '3008899001',
+        contrasena: 'password852'
+      });
+
+      const resumen = await ResumenMedico.create({
+        usuario: usuario._id,
+        descripcion: 'Paciente con alergia a la penicilina. Historial de asma.',
+        fechaActualizacion: new Date('2024-11-15')
+      });
+
+      usuario.resumenMedico = resumen._id;
+      await usuario.save();
+
+      const resumenObtenido = await usuarioService.getResumenMedico(usuario._id);
+
+      expect(resumenObtenido).toBeDefined();
+      expect(resumenObtenido._id).toBeDefined();
+      expect(resumenObtenido.usuario).toBeDefined();
+      expect(resumenObtenido.descripcion).toBeTruthy();
+      expect(resumenObtenido.fechaActualizacion).toBeInstanceOf(Date);
+    });
   });
 });
