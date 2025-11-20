@@ -1,64 +1,49 @@
 'use client';
 
-import { useState } from 'react'; // 1. Importamos useState
+import { useState } from 'react';
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store";
-import { ApiError } from "@/lib"; // Puedes usar esto en tu catch si lo deseas
+import { ApiError } from "@/lib";
 import { LoginPayload, RegisterPayload } from "@/schema";
 
 export const useAuth = () => {
   const router = useRouter();
   const setAuthData = useAuthStore((state) => state.setAuthData);
-  const [isLoading, setIsLoading] = useState(false); // Estado de carga local
+  const userId = useAuthStore((state) => state.uid); // Obtener el userId del store
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // La URL base de tu API (Asegúrate de que el puerto 3001 es correcto)
-
-  /**
-   * Maneja el inicio de sesión del usuario
-   * @param data Los datos del formulario (cedula y contrasena)
-   */
   const handleLogin = async (data: LoginPayload) => {
-    
-    // Verificamos si ya está cargando
     if (isLoading) return;
-
-    setIsLoading(true); // Iniciamos la carga
+    setIsLoading(true);
     
     try {
-      // Usamos 3001, como en el backend que configuramos
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, { 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        credentials: "include", // <-- Obligatorio para las cookies
+        credentials: "include",
       });
 
-      // Manejo de errores de la API
       if (!response.ok) {
         const errorData = await response.json();
         throw new ApiError(errorData.error || 'Cédula o contraseña incorrectas');
       }
 
-      // Si el login es exitoso
       const usuario = await response.json();
-
-      // Guardamos el usuario en el store de Zustand
+      console.log('Usuario recibido en handleLogin:', usuario);
       setAuthData(usuario);
-      
       toast.success(`¡Bienvenido, ${usuario.nombre}!`);
-      
-      // Redirigimos al dashboard
       router.push('/dashboard');
 
     } catch (error: any) {
-      // Manejo de errores de fetch o de la API
       console.error("Error en handleLogin:", error);
       toast.error(error.message || 'Ocurrió un error inesperado');
     } finally {
-      setIsLoading(false); // Terminamos la carga (incluso si falló)
+      setIsLoading(false);
     }
   };
 
@@ -67,7 +52,7 @@ export const useAuth = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, { // Asegúrate que API_URL esté definido
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -92,20 +77,14 @@ export const useAuth = () => {
     }
   };
 
-  /**
-   * Maneja el cierre de sesión del usuario
-   */
   const handleLogout = async () => {
-    // Evita múltiples clicks si ya está cerrando sesión
     if (isLoading) return;
-
-    setIsLoading(true); // Iniciamos estado de carga (opcional, por si toma tiempo)
+    setIsLoading(true);
 
     try {
-      // Llamamos al endpoint POST /logout del backend
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
         method: "POST",
-        credentials: "include", // Necesario para que el backend borre la cookie correcta
+        credentials: "include",
       });
 
       toast.success('Sesión cerrada exitosamente');
@@ -114,10 +93,9 @@ export const useAuth = () => {
       console.error("Error en handleLogout:", error);
       toast.error('Error al cerrar sesión');
     } finally {
-      // Independientemente del resultado, limpiamos el estado del frontend
-      setAuthData(null); // Borramos el usuario del store de Zustand
-      router.push('/'); // Redirigimos al login (ruta raíz)
-      setIsLoading(false); // Terminamos la carga
+      setAuthData(null);
+      router.push('/');
+      setIsLoading(false);
     }
   };
 
@@ -125,14 +103,12 @@ export const useAuth = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/domiciliario/login`, { // <-- Nueva URL
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/domiciliario/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
         credentials: "include",
       });
-
-      console.log("Respuesta del login Domiciliario:", response);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -142,7 +118,7 @@ export const useAuth = () => {
       const usuario = await response.json();
       setAuthData(usuario);
       toast.success(`¡Bienvenido, ${usuario.nombre}!`);
-      router.push('/domiciliario/dashboard'); // <-- Redirigir al dashboard de domiciliario
+      router.push('/domiciliario/dashboard');
     } catch (error: any) {
       console.error("Error en login Domiciliario:", error);
       toast.error(error.message);
@@ -151,12 +127,30 @@ export const useAuth = () => {
     }
   };
 
+  // Función para revalidar el usuario (útil para refrescar después de actualizaciones)
+  const mutate = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        setAuthData(userData);
+      }
+    } catch (error) {
+      console.error("Error al revalidar usuario:", error);
+    }
+  };
 
   return {
     handleLogin,
-    handleLogout, // <-- Exportamos la nueva función
-    isLoading, // Devolvemos el estado de carga
+    handleLogout,
+    isLoading,
     handleRegister,
-    handleDomiciliarioLogin
+    handleDomiciliarioLogin,
+    userId, // Exponer el userId para hacer consultas
+    isAuthenticated, // Exponer el estado de autenticación
+    mutate, // Exponer función para revalidar
   };
 };

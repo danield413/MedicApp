@@ -54,6 +54,7 @@ app.use('/api/historial-consumo', require('./routes/historial.routes.js'));
 app.use('/api/dosis', require('./routes/dosis.routes.js'));
 app.use('/api/citas', require('./routes/citas.routes.js'));
 app.use('/api/pedidos', require('./routes/pedido.routes.js'));
+app.use('/api/usuario', require('./routes/usuario.routes.js'));
 
 app.use((req, res) => {
   res.status(404).json({
