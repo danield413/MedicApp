@@ -10,6 +10,7 @@ import { useAuth } from '../../../hooks/auth/useAuth';
 import { loginSchema, LoginPayload } from '@/schema'; 
 // highlight-end
 import { EyeIcon, EyeSlashIcon } from '@/components/icons';
+import Link from 'next/link';
 
 export const AuthForm = () => {
   const [ isVisible, setIsVisible ] = useState(false);
@@ -44,7 +45,7 @@ export const AuthForm = () => {
           placeholder="Ingresa tu número de cédula"
           isInvalid={!!errors.cedula}
           errorMessage={errors.cedula?.message}
-          value="1234567890"
+          // value="1234567890"
         />
         {/* highlight-end */}
 
@@ -62,7 +63,7 @@ export const AuthForm = () => {
             // highlight-start
             isInvalid={!!errors.contrasena}
             errorMessage={errors.contrasena?.message}
-            value="password123"
+            // value="password123"
             // highlight-end
             endContent={
               <button
@@ -92,6 +93,14 @@ export const AuthForm = () => {
         >
           Iniciar sesión
         </Button>
+
+         {/* Crear link para ir a registro */}
+        <div className="flex items-center justify-center text-sm">
+          <span className="text-gray-600">¿No tienes una cuenta?</span>
+         <Link href="/register" className="ml-2 font-semibold text-teal-700 hover:text-teal-600">
+            Regístrate
+          </Link>
+        </div>
       </form>
     </>
   );

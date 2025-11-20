@@ -2,13 +2,14 @@ const jwt = require('jsonwebtoken');
 
 /**
  * Genera un JSON Web Token
- * @param {string} uid - El ID de usuario de MongoDB
- * @param {string} cedula - La cédula del usuario
+ * @param {string} uid - El ID del usuario o domiciliario
+ * @param {string} cedula - La cédula
+ * @param {string} role - 'Usuario' o 'Domiciliario'
  * @returns {Promise<string>} - Promesa que resuelve al token
  */
-const generarJWT = (uid, cedula) => {
+const generarJWT = (uid, cedula, role) => { // <-- Añadir role
   return new Promise((resolve, reject) => {
-    const payload = { uid, cedula };
+    const payload = { uid, cedula, role }; // <-- Añadir role al payload
 
     jwt.sign(
       payload,

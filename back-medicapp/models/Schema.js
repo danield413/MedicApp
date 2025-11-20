@@ -32,6 +32,7 @@ const domiciliarioSchema = new Schema({
   apellidos: { type: String, required: true },
   cedula: { type: String, required: true, unique: true },
   placaVehiculo: { type: String, required: true },
+  contrasena: { type: String, required: true }, // <-- AÑADIR ESTE CAMPO
   pedidosAsignados: [{ type: Schema.Types.ObjectId, ref: 'Pedido' }]
 }, { timestamps: true });
 
