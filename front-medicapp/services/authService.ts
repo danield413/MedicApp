@@ -19,3 +19,15 @@ export const login = async (credentials: LoginPayload): Promise<SuccessResponse<
 export const logout = async (): Promise<void> => {
   return api.post<void>('/auth/logout');
 };
+
+// front-medicapp/services/authService.ts
+
+// ... imports
+
+/**
+ * Solicita el reseteo de contraseña enviando el celular.
+ */
+export const forgotPassword = async (celular: string): Promise<SuccessResponse<{ msg: string }>> => {
+  // Enviamos { celular: "..." } al backend
+  return api.post('/auth/forgot-password', { celular });
+};

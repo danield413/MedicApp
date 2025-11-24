@@ -1,6 +1,21 @@
 const { response } = require('express');
 const authService = require('../services/auth.service');
 
+const forgotPassword = async (req, res = response) => {
+  const { celular } = req.body; // Ahora esperamos 'celular'
+  
+  try {
+    if (!celular) {
+      return res.status(400).json({ error: 'El número de celular es obligatorio' });
+    }
+
+    const result = await authService.resetPasswordByCelular(celular);
+    return res.status(200).json(result);
+  } catch (error) {
+    // Usamos tu helper de errores existente
+    return handleServiceError(res, error, 400);
+  }
+};
 
 const loginDomiciliario = async (req, res = response) => {
   const { cedula, contrasena } = req.body;
@@ -133,5 +148,6 @@ module.exports = {
   renew,
   newPassword, // <-- Aquí está la función que faltaba
   logout,
-  loginDomiciliario
+  loginDomiciliario,
+  forgotPassword
 };
