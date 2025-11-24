@@ -111,7 +111,24 @@ const createDosis = async (userId, data) => {
   }
 };
 
+const updateDosis = async (id, data) => {
+  try {
+    // Buscar y actualizar la dosis por ID
+    const dosisActualizada = await Dosis.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true, runValidators: true }
+    ).populate('medicamento', 'nombre concentracion presentacion').lean();
+
+    return dosisActualizada;
+  } catch (error) {
+    console.error('Error en updateDosis service:', error);
+    throw new Error(error.message || 'Error al actualizar la dosis');
+  }
+};
+
 module.exports = {
   getDosisByUser,
   createDosis,
+  updateDosis,
 };

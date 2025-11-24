@@ -13,16 +13,16 @@ import {
   PillIcon, 
   BoxIcon,
   HistoryIcon,
-  FileTextIcon, // <-- Importa el icono de fórmulas
+  FileTextIcon, 
   LogoutIcon
-} from '../components/MenuIcons'; // Adjust path if needed
+} from '../components/MenuIcons'; 
 
 // Define menu items
 const menuItems = [
   { href: '/dashboard', label: 'Mi Información', icon: <InfoIcon className="w-5 h-5" /> },
   { href: '/dashboard/recordatorios-citas', label: 'Recordatorios Citas', icon: <CalendarIcon className="w-5 h-5" /> },
-  { href: '/dashboard/recordatorios-medicamentos', label: 'Recordatorios Medicamentos', icon: <BellIcon className="w-5 h-5" /> },
-  { href: '/dashboard/medicamentos', label: 'Medicamentos', icon: <PillIcon className="w-5 h-5" /> },
+  // { href: '/dashboard/recordatorios-medicamentos', label: 'Recordatorios Medicamentos', icon: <BellIcon className="w-5 h-5" /> },
+  // { href: '/dashboard/medicamentos', label: 'Medicamentos', icon: <PillIcon className="w-5 h-5" /> },
   { href: '/dashboard/dosis', label: 'Dosis', icon: <PillIcon className="w-5 h-5" /> },
   { href: '/dashboard/formulas', label: 'Fórmulas Médicas', icon: <FileTextIcon className="w-5 h-5" /> }, // <-- Nueva ruta
   { href: '/dashboard/pedidos', label: 'Pedidos', icon: <BoxIcon className="w-5 h-5" /> },

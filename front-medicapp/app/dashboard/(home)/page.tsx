@@ -1,63 +1,160 @@
-// front-medicapp/app/dashboard/(home)/page.tsx
 'use client';
 
-import { Card, CardHeader, CardBody, CardFooter, Button, Spinner, useDisclosure } from '@heroui/react';
+import { useState } from 'react';
+import { Card, CardHeader, CardBody, CardFooter, Button, Spinner, useDisclosure, Chip } from '@heroui/react';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { PencilIcon } from '@/components/icons/PencilIcon';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getResumenMedico } from '@/services/userService';
+import type { Familiar } from '../../../services/familiaresService';
+import type { Antecedente, TipoAntecedente } from '../../../services/antecedentesService';
 
 // Importar los modales
 import InfoBasicaModal from './components/InfoBasicaModal';
 import ResumenMedicoModal from './components/ResumenMedicoModal';
+import FamiliaresModal from './components/FamiliaresModal';
+import AntecedentesModal from './components/AntecedentesModal';
+
+const getTipoColor = (tipo: TipoAntecedente) => {
+  const colors: Record<TipoAntecedente, "primary" | "secondary" | "success" | "warning" | "danger"> = {
+    personal: 'primary',
+    familiar: 'secondary',
+    quirurgico: 'warning',
+    alergico: 'danger',
+    toxico: 'danger',
+  };
+  return colors[tipo] || 'default';
+};
+
+const tiposAntecedente: Record<TipoAntecedente, string> = {
+  personal: 'Personal',
+  familiar: 'Familiar',
+  quirurgico: 'Quirúrgico',
+  alergico: 'Alérgico',
+  toxico: 'Tóxico',
+};
 
 export default function DashboardHomePage() {
-  const { userId, isLoading: isLoadingUser } = useAuth();
+  const { userId, token, isLoading: isLoadingUser } = useAuth();
   const queryClient = useQueryClient();
 
-  console.log('Usuario en DashboardHomePage:', userId);
-
-  // Query para obtener los datos del usuario
+  // -----------------------------------------------------------------------
+  // 1. Query: Datos del Usuario
+  // -----------------------------------------------------------------------
   const { data: userData, isLoading: isLoadingUserData, error: userError } = useQuery({
     queryKey: ['userData', userId],
     queryFn: async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/perfil/info-basica/${userId}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
-      
-      if (!response.ok) {
-        throw new Error('Error al obtener los datos del usuario');
-      }
-      
+      if (!response.ok) throw new Error('Error usuario');
       return response.json();
     },
-    enabled: !!userId, // Solo ejecutar si hay userId
+    enabled: !!userId,
   });
 
-  // Query para el resumen médico
+  // -----------------------------------------------------------------------
+  // 2. Query: Resumen Médico
+  // -----------------------------------------------------------------------
   const { data: resumen, isLoading: isLoadingResumen } = useQuery({
-    queryKey: ['resumenMedico'],
+    queryKey: ['resumenMedico', userId],
     queryFn: getResumenMedico,
     enabled: !!userId,
   });
 
+  // -----------------------------------------------------------------------
+  // 3. Query: Familiares (SIEMPRE SE EJECUTA)
+  // -----------------------------------------------------------------------
+  const { data: familiaresData, isLoading: isLoadingFamiliares } = useQuery({
+    queryKey: ['familiares', userId],
+    queryFn: async () => {
+      if (!userId) return []; // Retorna array vacío si no hay userId
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/familiares/${userId}`, {
+        method: 'GET',
+        headers: { 
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }), // Agrega token si existe
+        },
+      });
+      if (!response.ok) {
+        console.error('Error al obtener familiares:', response.status);
+        return []; // Retorna array vacío en caso de error
+      }
+      const json = await response.json();
+      console.log("familiares fetch", json);
+      return json.data || [];
+    },
+    // enabled: true, // Por defecto es true, no hace falta especificarlo
+    refetchOnWindowFocus: true, // Se actualiza cuando vuelves a la ventana
+    refetchOnMount: true, // Se actualiza al montar el componente
+    staleTime: 0, // Los datos se consideran obsoletos inmediatamente
+    initialData: [],
+  });
+
+  // -----------------------------------------------------------------------
+  // 4. Query: Antecedentes (SIEMPRE SE EJECUTA)
+  // -----------------------------------------------------------------------
+  const { data: antecedentesData, isLoading: isLoadingAntecedentes } = useQuery({
+    queryKey: ['antecedentes', userId],
+    queryFn: async () => {
+      if (!userId) return []; // Retorna array vacío si no hay userId
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/antecedentes/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }), // Agrega token si existe
+        },
+      });
+      if (!response.ok) {
+        console.error('Error al obtener antecedentes:', response.status);
+        return []; // Retorna array vacío en caso de error
+      }
+      const json = await response.json();
+      console.log("antecedentes fetch", json);
+      return json.data || [];
+    },
+    // enabled: true, // Por defecto es true
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0,
+    initialData: [],
+  });
+
+  // Variables derivadas para facilitar el uso en el render
+  const familiares: Familiar[] = familiaresData || [];
+  const antecedentes: Antecedente[] = antecedentesData || [];
+
   // Hooks para los modales
   const { isOpen: isInfoOpen, onOpen: onInfoOpen, onClose: onInfoClose } = useDisclosure();
   const { isOpen: isResumenOpen, onOpen: onResumenOpen, onClose: onResumenClose } = useDisclosure();
+  const { isOpen: isFamiliaresOpen, onOpen: onFamiliaresOpen, onClose: onFamiliaresClose } = useDisclosure();
+  const { isOpen: isAntecedentesOpen, onOpen: onAntecedentesOpen, onClose: onAntecedentesClose } = useDisclosure();
 
-  // Función para cerrar modal y refrescar datos
+  // -----------------------------------------------------------------------
+  // Manejadores de cierre (Invalidan queries para refrescar datos automáticamente)
+  // -----------------------------------------------------------------------
   const handleInfoClose = () => {
     queryClient.invalidateQueries({ queryKey: ['userData', userId] });
     onInfoClose();
   };
 
   const handleResumenClose = () => {
-    queryClient.invalidateQueries({ queryKey: ['resumenMedico'] });
+    queryClient.invalidateQueries({ queryKey: ['resumenMedico', userId] });
     onResumenClose();
+  };
+
+  const handleFamiliaresClose = () => {
+    queryClient.invalidateQueries({ queryKey: ['familiares', userId] });
+    onFamiliaresClose();
+  };
+
+  const handleAntecedentesClose = () => {
+    queryClient.invalidateQueries({ queryKey: ['antecedentes', userId] });
+    onAntecedentesClose();
   };
 
   if (isLoadingUser || isLoadingUserData || isLoadingResumen) {
@@ -68,27 +165,16 @@ export default function DashboardHomePage() {
     );
   }
 
-  if (!userId) {
-    return <p>No se pudo cargar la información del usuario.</p>;
-  }
-
-  if (userError) {
-    return <p>Error al cargar la información del usuario.</p>;
-  }
+  if (!userId) return <p>No se pudo cargar la información del usuario.</p>;
+  if (userError) return <p>Error al cargar la información del usuario.</p>;
 
   const user = userData || {};
-  console.log('Datos del usuario:', user);
 
-  // Función para formatear fecha (si existe)
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | Date | null) => {
     if (!dateString) return 'No especificado';
     try {
-        // Usar timeZone UTC para evitar problemas de desfase de un día
         return new Date(dateString).toLocaleDateString('es-CO', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC' 
+            year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' 
         });
     } catch (error) {
         return 'Fecha inválida';
@@ -152,11 +238,117 @@ export default function DashboardHomePage() {
             </CardFooter>
           )}
         </Card>
+
+        {/* Tarjeta de Familiares */}
+        <Card>
+          <CardHeader className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Familiares</h2>
+            <Button color="primary" variant="flat" size="sm" onPress={onFamiliaresOpen} startContent={<PencilIcon />}>
+              Gestionar
+            </Button>
+          </CardHeader>
+          <CardBody>
+            {isLoadingFamiliares ? (
+              <div className="flex justify-center py-4">
+                <Spinner size="sm" label="Cargando familiares..." />
+              </div>
+            ) : familiares.length === 0 ? (
+              <p className="text-default-600">
+                No tiene familiares registrados. Haga clic en "Gestionar" para agregar.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {familiares.slice(0, 3).map((familiar: Familiar) => (
+                  <div key={familiar._id} className="border-b border-default-200 pb-2 last:border-b-0">
+                    <p className="font-semibold">{familiar.nombre} {familiar.apellido}</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm text-default-600 mt-1">
+                      <span><strong>Parentesco:</strong> {familiar.parentesco}</span>
+                      <span><strong>Celular:</strong> {familiar.celular}</span>
+                      <span className="col-span-2"><strong>Correo:</strong> {familiar.correo}</span>
+                    </div>
+                  </div>
+                ))}
+                {familiares.length > 3 && (
+                  <p className="text-sm text-default-500 italic">
+                    Y {familiares.length - 3} más...
+                  </p>
+                )}
+              </div>
+            )}
+          </CardBody>
+          <CardFooter>
+            <p className="text-xs text-default-500">
+              Total de familiares: {familiares.length}
+            </p>
+          </CardFooter>
+        </Card>
+
+        {/* Tarjeta de Antecedentes */}
+        <Card>
+          <CardHeader className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Antecedentes Médicos</h2>
+            <Button color="primary" variant="flat" size="sm" onPress={onAntecedentesOpen} startContent={<PencilIcon />}>
+              Gestionar
+            </Button>
+          </CardHeader>
+          <CardBody>
+            {isLoadingAntecedentes ? (
+              <div className="flex justify-center py-4">
+                <Spinner size="sm" label="Cargando antecedentes..." />
+              </div>
+            ) : antecedentes.length === 0 ? (
+              <p className="text-default-600">
+                No tiene antecedentes registrados. Haga clic en "Gestionar" para agregar.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {antecedentes.slice(0, 3).map((antecedente: Antecedente) => (
+                  <div key={antecedente._id} className="border-b border-default-200 pb-2 last:border-b-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <Chip 
+                        color={getTipoColor(antecedente.tipo)} 
+                        size="sm" 
+                        variant="flat"
+                      >
+                        {tiposAntecedente[antecedente.tipo]}
+                      </Chip>
+                      {antecedente.activo && (
+                        <Chip color="success" size="sm" variant="dot">
+                          Activo
+                        </Chip>
+                      )}
+                    </div>
+                    <p className="text-sm text-default-700 line-clamp-2">
+                      {antecedente.descripcion}
+                    </p>
+                    {antecedente.fechaDiagnostico && (
+                      <p className="text-xs text-default-500 mt-1">
+                        Diagnóstico: {formatDate(antecedente.fechaDiagnostico)}
+                      </p>
+                    )}
+                  </div>
+                ))}
+                {antecedentes.length > 3 && (
+                  <p className="text-sm text-default-500 italic">
+                    Y {antecedentes.length - 3} más...
+                  </p>
+                )}
+              </div>
+            )}
+          </CardBody>
+          <CardFooter>
+            <p className="text-xs text-default-500">
+              Total de antecedentes: {antecedentes.length}
+            </p>
+          </CardFooter>
+        </Card>
       </div>
 
-      {/* Modales (se renderizan aquí pero están ocultos hasta que se activan) */}
+      {/* Modales */}
       <InfoBasicaModal isOpen={isInfoOpen} onClose={handleInfoClose} userData={user} />
       <ResumenMedicoModal isOpen={isResumenOpen} onClose={handleResumenClose} />
+      <FamiliaresModal isOpen={isFamiliaresOpen} onClose={handleFamiliaresClose} />
+      <AntecedentesModal isOpen={isAntecedentesOpen} onClose={handleAntecedentesClose} />
     </div>
   );
 }

@@ -57,6 +57,10 @@ app.use('/api/pedidos', require('./routes/pedido.routes.js'));
 app.use('/api/usuario', require('./routes/usuario.routes.js'));
 app.use('/api/formula', require('./routes/formula.routes.js'));
 
+app.use('/api/familiares', require('./routes/familiares.routes')  );
+app.use('/api/antecedentes', require('./routes/antecedentes.routes'));
+
+
 app.use((req, res) => {
   res.status(404).json({
     error: 'Ruta no encontrada',
