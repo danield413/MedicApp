@@ -3,19 +3,29 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Alert, Button, Spinner } from '@heroui/react';
-import { fetchDosis, Dosis } from '../../../services/dosisService'; // Importa el servicio de dosis
+import { fetchDosis, Dosis } from '../../../services/dosisService';
+import { useAuth } from '../../../hooks/auth/useAuth';
+
 
 function DosisPage() {
   const [dosis, setDosis] = useState<Dosis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { userId } = useAuth();
+  console.log('EditarDosisPage userId:', userId);
+
 
   useEffect(() => {
     const cargarDosis = async () => {
+      // Validar que userId esté disponible
+      if (!userId) {
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
       try {
-        const data = await fetchDosis();
+        const data = await fetchDosis(userId);
         setDosis(data);
       } catch (err: any) {
         console.error("Error al cargar dosis:", err);
@@ -25,7 +35,7 @@ function DosisPage() {
       }
     };
     cargarDosis();
-  }, []);
+  }, [userId]); // Agregar userId como dependencia
 
   return (
     <div>
@@ -84,6 +94,13 @@ function DosisPage() {
                           Frecuencia: {item.frecuencia}
                         </p>
                       )}
+                      <div className="mt-2">
+                        <Link href={`/dashboard/dosis/editar/${item._id}`}>
+                          <Button size="sm" color="secondary" variant="flat">
+                            Editar
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </li>

@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button, Spinner, Badge } from '@heroui/react'; // Badge para el estado
-import { fetchCitas, Cita } from '../../../services/citaService'; // Verifica la ruta
+import { Button, Spinner, Badge } from '@heroui/react';
+import { fetchCitas, Cita } from '../../../services/citaService';
 
-// Helper para mapear estados a colores de Badge (ajusta según HeroUI)
+// Helper para mapear estados a colores de Badge
 const getStatusColor = (status: Cita['estado']) => {
   switch (status) {
     case 'pendiente': return 'warning';
     case 'confirmada': return 'success';
     case 'cancelada': return 'danger';
-    case 'completada': return 'neutral'; // O 'info'
+    case 'completada': return 'neutral';
     default: return 'neutral';
   }
 };
@@ -99,7 +99,7 @@ function CitasPage() {
                     </div>
                     {/* Estado y Observaciones */}
                     <div className="text-left sm:text-right flex-shrink-0">
-                      <Badge color={getStatusColor(cita.estado)} variant="solid"> {/* Ajusta variant si es necesario */}
+                      <Badge color={getStatusColor(cita.estado)} variant="solid">
                         {cita.estado.charAt(0).toUpperCase() + cita.estado.slice(1)}
                       </Badge>
                       {cita.observaciones && (
@@ -107,7 +107,13 @@ function CitasPage() {
                           Obs: {cita.observaciones}
                         </p>
                       )}
-                       {/* Podrías añadir botones Editar/Cancelar aquí */}
+                      <div className="mt-3">
+                        <Link href={`/dashboard/recordatorios-citas/editar/${cita._id}`}>
+                          <Button size="sm" color="secondary" variant="flat">
+                            Editar
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </li>

@@ -56,7 +56,33 @@ const createCita = async (userId, data) => {
   }
 };
 
+const updateCita = async (userId, citaId, data) => {
+  try {
+    // Busca la cita por ID y usuario para asegurar que pertenece al usuario autenticado
+    const cita = await Cita.findOne({ _id: citaId, usuario: userId });
+    if (!cita) {
+      throw new Error('Cita no encontrada o no pertenece al usuario');
+    }
+    // Actualiza los campos permitidos
+    Object.keys(data).forEach(key => {
+      cita[key] = data[key];
+    });
+
+    // Guarda los cambios
+    await cita.save();
+    return cita.toObject();
+  } catch (error) {
+    console.error('Error en updateCita service:', error);
+    if (error.name === 'ValidationError') {
+
+        throw new Error(`Error de validación: ${Object.values(error.errors).map(e => e.message).join(', ')}`);
+    }
+    throw new Error(error.message || 'Error al actualizar la cita');
+  }
+};
+
 module.exports = {
   getCitasByUser,
   createCita,
+  updateCita,
 };

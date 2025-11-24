@@ -46,7 +46,30 @@ const createCita = async (req, res = response) => {
   }
 };
 
+/**
+ * Controlador para actualizar una cita existente del usuario autenticado.
+ */
+const updateCita = async (req, res = response) => {
+  try {
+    const userId = req.usuario.id;
+    const { id } = req.params;
+    const data = req.body;
+
+    // Validación básica
+    if (!id) {
+      return res.status(400).json({ error: 'ID de cita requerido' });
+    }
+
+    const citaActualizada = await citasService.updateCita(userId, id, data);
+    return res.status(200).json(citaActualizada);
+  } catch (error) {
+
+    return handleServiceError(res, error, 404);
+  }
+};
+
 module.exports = {
   getCitas,
   createCita,
+  updateCita,
 };

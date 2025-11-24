@@ -52,3 +52,20 @@ export const addCita = async (data: CitaPayload): Promise<Cita> => {
   }
   return response.json();
 };
+
+
+export const updateCita = async (id: string, data: Partial<Cita>): Promise<Cita> => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'include', // Para enviar la cookie de sesión
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al actualizar la cita');
+  }
+
+  return response.json();
+};

@@ -15,7 +15,7 @@ const handleServiceError = (res, error, defaultStatus = 500) => {
  */
 const getDosis = async (req, res = response) => {
   try {
-    const userId = req.usuario.id;
+    const userId = req.params.id;
     const dosis = await dosisService.getDosisByUser(userId);
     return res.status(200).json(dosis);
   } catch (error) {
@@ -43,7 +43,31 @@ const createDosis = async (req, res = response) => {
   }
 };
 
+/**
+ * Controlador para actualizar una dosis existente del usuario autenticado.
+ */
+const updateDosis = async (req, res = response) => {
+
+  console.log('Actualizar dosis - req.params:', req.params);
+
+  try {
+    const id = req.params.id;
+    const data = req.body;
+
+    // Validación básica
+    if (!id) {
+      return res.status(400).json({ error: 'ID de dosis requerido' });
+    }
+
+    const dosisActualizada = await dosisService.updateDosis(id, data);
+    return res.status(200).json(dosisActualizada);
+  } catch (error) {
+    return handleServiceError(res, error, 404);
+  }
+};
+
 module.exports = {
   getDosis,
   createDosis,
+  updateDosis,
 };
