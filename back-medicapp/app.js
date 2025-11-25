@@ -3,7 +3,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const database = require('./config/database');
-const cookieParser = require('cookie-parser'); // <-- 1. Importar
+const cookieParser = require('cookie-parser'); 
+const recordatoriosRoutes = require('./routes/recordatorios.routes');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +61,9 @@ app.use('/api/formula', require('./routes/formula.routes.js'));
 
 app.use('/api/familiares', require('./routes/familiares.routes')  );
 app.use('/api/antecedentes', require('./routes/antecedentes.routes'));
+
+app.use('/api/recordatorios', recordatoriosRoutes);
+
 
 
 app.use((req, res) => {
