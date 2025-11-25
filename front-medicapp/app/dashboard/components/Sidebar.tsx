@@ -27,6 +27,13 @@ const menuItems = [
   { href: '/dashboard/formulas', label: 'Fórmulas Médicas', icon: <FileTextIcon className="w-5 h-5" /> }, // <-- Nueva ruta
   { href: '/dashboard/pedidos', label: 'Pedidos', icon: <BoxIcon className="w-5 h-5" /> },
   { href: '/dashboard/historial-consumo', label: 'Historial Consumo', icon: <HistoryIcon className="w-5 h-5" /> },
+  {
+    name: 'Reporte Consumo',
+    href: '/dashboard/reporte-consumo',
+    icon: <BellIcon className="w-5 h-5" />,
+    label: 'Reporte Consumo', 
+    current: false, 
+  },
 ];
 
 export const SideBar = () => {

@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { getHistorialUsuario, createRegistroConsumo } = require('../controllers/historial.controller');
+const { getHistorialUsuario, createRegistroConsumo, getReporteConsumo } = require('../controllers/historial.controller');
 const { validateJWT } = require('../middlewares/validateJWT'); // Middleware de autenticación
 
 const router = Router();
@@ -8,5 +8,8 @@ const router = Router();
 // GET /api/historial-consumo
 router.get('/', validateJWT, getHistorialUsuario);
 router.post('/', validateJWT, createRegistroConsumo);
+
+// GET /api/historial-consumo/reporte-consumo
+router.get('/reporte-consumo', validateJWT, getReporteConsumo);
 
 module.exports = router;
