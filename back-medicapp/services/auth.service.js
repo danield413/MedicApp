@@ -1,6 +1,41 @@
 const bcrypt = require('bcryptjs');
-const { Usuario } = require('../models/Schema');
+const { Usuario, Domiciliario } = require('../models/Schema');
 const { generarJWT } = require('../helpers/jwt');
+const { enviarSMS } = require('../helpers/smsSender'); // Importar el helper
+
+/**
+ * Resetea la contraseña buscando por celular y enviándola por SMS (simulado)
+ * @param {string} celular
+ */
+const resetPasswordByCelular = async (celular) => {
+  try {
+    // 1. Buscar usuario por celular
+    const usuario = await Usuario.findOne({ celular });
+    if (!usuario) {
+      throw new Error('No existe un usuario registrado con ese número de celular');
+    }
+
+    // 2. Generar contraseña aleatoria (6 caracteres para que sea fácil de leer en SMS)
+    const newPassword = Math.random().toString(36).slice(-6).toUpperCase();
+
+    // 3. Encriptar y guardar
+    const salt = bcrypt.genSaltSync();
+    usuario.contrasena = bcrypt.hashSync(newPassword, salt);
+    await usuario.save();
+
+    // 4. Enviar SMS
+    const mensaje = `MedicApp: Tu nueva clave temporal es: ${newPassword}. Por favor cámbiala al ingresar.`;
+    await enviarSMS(usuario.celular, mensaje);
+
+    return { 
+      msg: `Se ha enviado una nueva contraseña al celular terminado en ${celular.slice(-4)}` 
+    };
+
+  } catch (error) {
+    console.error('Error en resetPasswordByCelular:', error);
+    throw new Error(error.message || 'Error al restablecer contraseña');
+  }
+};
 
 /**
  * Registra un nuevo usuario en la base de datos
@@ -24,7 +59,7 @@ const registerUser = async (userData) => {
     await usuario.save();
 
     // Generar JWT
-    const token = await generarJWT(usuario.id, usuario.cedula);
+    const token = await generarJWT(usuario.id, usuario.cedula, 'Usuario');
 
     // Devolvemos token y usuario por separado para el controlador
     return {
@@ -40,6 +75,7 @@ const registerUser = async (userData) => {
     throw new Error(error.message || 'Error al registrar usuario');
   }
 };
+
 
 /**
  * Loguea un usuario existente
@@ -60,7 +96,7 @@ const loginUser = async (cedula, contrasena) => {
     }
 
     // Generar JWT
-    const token = await generarJWT(usuario.id, usuario.cedula);
+    const token = await generarJWT(usuario.id, usuario.cedula, 'Usuario');
 
     // Devolvemos token y usuario por separado para el controlador
     return {
@@ -84,7 +120,7 @@ const loginUser = async (cedula, contrasena) => {
 const renewToken = async (usuario) => {
   try {
     // Generar un nuevo JWT
-    const token = await generarJWT(usuario.id, usuario.cedula);
+   const token = await generarJWT(usuario.id, usuario.cedula, 'Usuario');
 
     // Devolvemos token y usuario por separado para el controlador
     return {
@@ -130,10 +166,47 @@ const updatePassword = async (usuario, oldPassword, newPassword) => {
   }
 };
 
+/**
+ * Loguea un domiciliario existente
+ * @param {string} cedula
+ * @param {string} contrasena
+ */
+const loginDomiciliario = async (cedula, contrasena) => {
+  try {
+    const domiciliario = await Domiciliario.findOne({ cedula });
+    if (!domiciliario) {
+      throw new Error('Cédula o contraseña incorrectas');
+    }
+
+    const validPassword = bcrypt.compareSync(contrasena, domiciliario.contrasena);
+    if (!validPassword) {
+      throw new Error('Cédula o contraseña incorrectas');
+    }
+
+    // Generar JWT con role 'Domiciliario'
+    const token = await generarJWT(domiciliario.id, domiciliario.cedula, 'Domiciliario');
+
+    return {
+      token,
+      usuario: { // Devolvemos un objeto 'usuario' genérico para el frontend
+        uid: domiciliario.id,
+        nombre: domiciliario.nombre,
+        cedula: domiciliario.cedula,
+        role: 'Domiciliario' // <-- importante
+      }
+    };
+  } catch (error) {
+    console.error('Error en loginDomiciliario service:', error);
+    throw new Error(error.message || 'Error al iniciar sesión');
+  }
+};
+
 
 module.exports = {
   registerUser,
   loginUser,
   renewToken,
   updatePassword,
+  loginDomiciliario,
+  resetPasswordByCelular
 };

@@ -1,49 +1,68 @@
-// services/userService.ts
+// front-medicapp/services/userService.ts
+import { InfoBasica, ResumenMedico } from '@/schema/perfilSchema';
+import { IUser } from '@/types/user';
 
-import { api } from '@/lib';
-import { CreateUserPayload, UpdateUserPayload } from '@/schema';
-import { User, SuccessResponse } from '@/types';
+// Interfaz para el resumen médico (lo que recibimos de la API)
+export interface IResumenMedico {
+  _id: string | null;
+  descripcion: string;
+  fechaActualizacion?: string;
+  usuario?: string;
+}
 
 /**
- * Obtiene todos los usuarios de la compañía del usuario actual.
+ * Actualiza la información básica del usuario.
  */
-export const getAllUsers = async (): Promise<User[]> => {
-  return api.get<SuccessResponse<User[]>>('/users') as any;
+export const updateInfoBasica = async (datos: InfoBasica): Promise<IUser> => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/perfil/info-basica`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(datos),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(errorData.error || 'No se pudo actualizar la información');
+  }
+  return response.json();
 };
 
 /**
- * Obtiene un usuario específico por su ID.
- * @param id - El ID del usuario.
+ * Actualiza el resumen médico del usuario.
  */
-export const getUserById = async (id: string): Promise<SuccessResponse<User>> => {
-  return api.get<SuccessResponse<User>>(`/users/${id}`);
+export const updateResumenMedico = async (datos: ResumenMedico): Promise<IResumenMedico> => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/perfil/resumen-medico`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(datos),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(errorData.error || 'No se pudo actualizar el resumen');
+  }
+  return response.json();
 };
 
 /**
- * Crea un nuevo usuario.
- * @param data - Los datos del usuario a crear.
+ * Obtiene el resumen médico del usuario.
  */
-export const createUser = async (data: CreateUserPayload): Promise<SuccessResponse<User>> => {
-  console.log('Creating user with data (service):', data);
-  return api.post<SuccessResponse<User>>('/users', data);
-};
+export const getResumenMedico = async (): Promise<IResumenMedico> => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/perfil/resumen-medico`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
 
-/**
- * Actualiza un usuario existente.
- * @param id - El ID del usuario a actualizar.
- * @param data - Los datos a modificar.
- */
-export const updateUser = async (
-  id: string,
-  data: UpdateUserPayload
-): Promise<SuccessResponse<User>> => {
-  return api.put<SuccessResponse<User>>(`/users/${id}`, data);
-};
-
-/**
- * Desactiva (borrado lógico) un usuario por su ID.
- * @param id - El ID del usuario a desactivar.
- */
-export const deleteUser = async (id: string): Promise<SuccessResponse<User>> => {
-  return api.del<SuccessResponse<User>>(`/users/${id}`);
-};
+  if (!response.ok) {
+     const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+     // Si es 404 (no encontrado), devolvemos uno vacío
+     if (response.status === 404) {
+        return { _id: null, descripcion: '' };
+     }
+     throw new Error(errorData.error || 'No se pudo obtener el resumen médico');
+  }
+  return response.json();
+}

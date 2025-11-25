@@ -12,11 +12,9 @@ export const registerSchema = z.object({
   contrasena: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   confirmarContrasena: z.string().min(6, 'Debes confirmar la contraseña'),
 })
-// Validamos que las contraseñas coincidan
 .refine((data) => data.contrasena === data.confirmarContrasena, {
   message: "Las contraseñas no coinciden",
-  path: ["confirmarContrasena"], // El error se mostrará en este campo
+  path: ["confirmarContrasena"], 
 });
-
 
 export type RegisterPayload = z.infer<typeof registerSchema>;

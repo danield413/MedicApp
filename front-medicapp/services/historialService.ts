@@ -83,3 +83,18 @@ export const fetchMedicamentos = async (): Promise<MedicamentoSimple[]> => {
   }
   return response.json();
 }
+
+export const getReporteConsumo = async () => {
+  const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/historial-consumo/reporte-consumo', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(errorData.error || 'Error al obtener el reporte de consumo');
+  }
+
+  return response.json();
+};

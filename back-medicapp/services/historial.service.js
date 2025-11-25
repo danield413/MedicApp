@@ -63,7 +63,34 @@ const addRegistroConsumo = async (userId, data) => {
   }
 };
 
+/**
+ * Obtiene el historial de consumos del usuario del último mes.
+ * @param {string} userId - ID del usuario.
+ * @returns {Promise<Array>} - Lista de consumos del último mes.
+ */
+const getHistorialConsumoLastMonth = async (userId) => {
+  try {
+    // Calcular la fecha de hace 1 mes
+    const fechaLimite = new Date();
+    fechaLimite.setMonth(fechaLimite.getMonth() - 1);
+
+    const historial = await RegistroConsumo.find({
+      usuario: userId,
+      fechaHoraToma: { $gte: fechaLimite } // Filtro: fecha mayor o igual a hace 1 mes
+    })
+      .populate('medicamento', 'nombre concentracion presentacion')
+      .sort({ fechaHoraToma: -1 })
+      .lean();
+
+    return historial;
+  } catch (error) {
+    console.error('Error en getHistorialConsumoLastMonth service:', error);
+    throw new Error('Error al obtener el reporte de consumo');
+  }
+};
+
 module.exports = {
-  getHistorialConsumoRealByUser, // <-- Renombrada para claridad
+  getHistorialConsumoRealByUser,
   addRegistroConsumo,
+  getHistorialConsumoLastMonth, 
 };

@@ -12,11 +12,15 @@ jest.setTimeout(10000);
 
 // Silencia solo console.error durante los tests
 const originalError = console.error;
+const originalWarn = console.warn;
 beforeAll(() => {
   jest.spyOn(console, 'error').mockImplementation(() => {});
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
 });
 afterAll(() => {
   console.error.mockRestore?.();
   // Por si quieres restaurar explícitamente:
   console.error = originalError;
+  console.warn?.mockRestore?.();
+  console.warn = originalWarn;
 });

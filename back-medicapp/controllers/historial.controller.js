@@ -49,7 +49,24 @@ const createRegistroConsumo = async (req, res = response) => {
   }
 };
 
+/**
+ * Controlador para obtener el reporte de consumo del último mes.
+ */
+const getReporteConsumo = async (req, res = response) => {
+  try {
+    const userId = req.usuario.id; // El ID viene del token JWT validado
+    
+    // Llamar al servicio específico para el reporte mensual
+    const reporte = await historialService.getHistorialConsumoLastMonth(userId);
+    
+    return res.status(200).json(reporte);
+  } catch (error) {
+    return handleServiceError(res, error);
+  }
+};
+
 module.exports = {
-  getHistorialUsuario,      // Exporta la función GET actualizada
-  createRegistroConsumo,    // Exporta la función POST actualizada
+  getHistorialUsuario,     
+  createRegistroConsumo,  
+  getReporteConsumo, 
 };
