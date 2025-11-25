@@ -34,6 +34,13 @@ const menuItems = [
     label: 'Reporte Consumo', 
     current: false, 
   },
+  {
+    name: 'Recordatorios Medicamentos',
+    href: '/dashboard/recordatorios-medicamentos',
+    icon: <BellIcon className="w-5 h-5" />,
+    label: 'Recordatorios Medicamentos', 
+    current: false, 
+  }
 ];
 
 export const SideBar = () => {
