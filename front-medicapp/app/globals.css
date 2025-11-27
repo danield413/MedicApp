@@ -1,0 +1,67 @@
+@import 'tailwindcss';
+@plugin '../hero.ts';
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --animate-meteor: meteor 5s linear infinite;
+
+  @keyframes meteor {
+    0% {
+      transform: rotate(var(--angle)) translateX(0);
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(var(--angle)) translateX(-500px);
+      opacity: 0;
+    }
+  }
+}
+
+.grid-container-collapse {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr 1fr auto;
+  max-height: 100dvh;
+  grid-template-areas:
+    'header header'
+    'main main'
+    'main main'
+    'footer footer';
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  grid-template-rows: auto 1fr 1fr auto;
+  max-height: 100dvh;
+  grid-template-areas:
+    'sidebar header header'
+    'sidebar main main'
+    'sidebar main main'
+    'footer footer footer';
+}
+
+.grid-container .sidebar,
+.grid-container-collapse .sidebar {
+  grid-area: sidebar;
+}
+
+.grid-container .header,
+.grid-container-collapse .header {
+  grid-area: header;
+}
+
+.grid-container .main,
+.grid-container-collapse .main {
+  grid-area: main;
+  overflow: auto;
+}
+
+.grid-container .footer,
+.grid-container-collapse .footer {
+  grid-area: footer;
+}
