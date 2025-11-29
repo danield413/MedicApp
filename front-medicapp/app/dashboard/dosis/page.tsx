@@ -94,6 +94,12 @@ function DosisPage() {
                           Frecuencia: {item.frecuencia}
                         </p>
                       )}
+                      {item.hora && (
+                        //badge
+                        <p className="text-xs text-gray-500 dark:text-gray-400  mt-1 bg-gray-200 dark:bg-gray-700 inline-block px-2 py-1 rounded-full">
+                          Hora: {item.hora}
+                        </p>
+                      )}
                       <div className="mt-2">
                         <Link href={`/dashboard/dosis/editar/${item._id}`}>
                           <Button size="sm" color="secondary" variant="flat">

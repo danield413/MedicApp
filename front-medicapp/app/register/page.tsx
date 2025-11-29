@@ -1,6 +1,6 @@
-import { RegisterForm } from './components/RegisterForm'; // Importa el formulario
-import { Copyright } from '@/components/shared'; // Ajusta la ruta
-// import Logo from '@/public/images/logo.png'; // Descomenta si tienes un logo
+import { RegisterForm } from './components/RegisterForm'; 
+import { Copyright } from '@/components/shared';
+
 
 export default function RegisterPage() {
   return (

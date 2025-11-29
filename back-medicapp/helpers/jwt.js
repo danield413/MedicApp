@@ -7,9 +7,9 @@ const jwt = require('jsonwebtoken');
  * @param {string} role - 'Usuario' o 'Domiciliario'
  * @returns {Promise<string>} - Promesa que resuelve al token
  */
-const generarJWT = (uid, cedula, role) => { // <-- Añadir role
+const generarJWT = (uid, cedula, role) => { 
   return new Promise((resolve, reject) => {
-    const payload = { uid, cedula, role }; // <-- Añadir role al payload
+    const payload = { uid, cedula, role };
 
     jwt.sign(
       payload,
