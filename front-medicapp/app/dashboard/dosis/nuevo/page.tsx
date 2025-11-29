@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 import { dosisSchema, DosisPayload } from '../../../../schema/dosisSchema';
 import { addDosis } from '../../../../services/dosisService';
-import { fetchMedicamentos, MedicamentoSimple } from '@/services/historialService'; // Reutilizamos el servicio
+import { fetchMedicamentos, MedicamentoSimple } from '@/services/historialService';
 
 function AddDosisPage() {
   const router = useRouter();
@@ -98,7 +98,7 @@ function AddDosisPage() {
             className="w-full"
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               {...register('cantidadDiaria')}
               label="Cantidad Diaria *"
@@ -120,15 +120,28 @@ function AddDosisPage() {
             />
           </div>
 
-          <Input
-            {...register('frecuencia')}
-            label="Frecuencia (Opcional)"
-            labelPlacement="outside"
-            placeholder="Ej: Cada 8 horas"
-            isInvalid={!!errors.frecuencia}
-            errorMessage={errors.frecuencia?.message}
-            className="w-full"
-          />
+          {/* Nuevo campo de Hora y Frecuencia en una fila */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            <Input
+              {...register('frecuencia')}
+              label="Frecuencia (Opcional)"
+              labelPlacement="outside"
+              placeholder="Ej: Cada 8 horas"
+              isInvalid={!!errors.frecuencia}
+              errorMessage={errors.frecuencia?.message}
+              className="w-full"
+            />
+
+            <Input
+              {...register('hora')}
+              label="Hora de Toma (Opcional)"
+              type="time"
+              labelPlacement="outside"
+              isInvalid={!!errors.hora}
+              errorMessage={errors.hora?.message}
+              className="w-full"
+            />
+          </div>
 
           <div className="flex justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700 mt-8">
             <Button

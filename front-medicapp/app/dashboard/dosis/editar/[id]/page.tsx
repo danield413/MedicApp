@@ -19,17 +19,15 @@ function EditarDosisPage() {
     descripcion: '',
     frecuencia: '',
     unidadMedida: '',
+    hora: '', // <-- Inicializar campo hora
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useAuth();
 
-  console.log('EditarDosisPage userId:', userId);
-
   useEffect(() => {
     const cargarDatos = async () => {
-      // Validar que userId esté disponible
       if (!userId) {
         return;
       }
@@ -55,6 +53,7 @@ function EditarDosisPage() {
           descripcion: dosisActual.descripcion,
           frecuencia: dosisActual.frecuencia || '',
           unidadMedida: dosisActual.unidadMedida || '',
+          hora: dosisActual.hora || '', // <-- Cargar la hora existente
         });
         
         setMedicamentos(medicamentosData);
@@ -67,7 +66,7 @@ function EditarDosisPage() {
     };
 
     cargarDatos();
-  }, [dosisId, userId]); // Agregar userId como dependencia
+  }, [dosisId, userId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +80,7 @@ function EditarDosisPage() {
         descripcion: formData.descripcion,
         frecuencia: formData.frecuencia,
         unidadMedida: formData.unidadMedida,
+        hora: formData.hora, // <-- Enviar hora actualizada
       });
 
       router.push('/dashboard/dosis');
@@ -140,12 +140,22 @@ function EditarDosisPage() {
           min="1"
         />
 
-        <Input
-          label="Unidad de Medida"
-          placeholder="tableta(s), ml, etc."
-          value={formData.unidadMedida}
-          onChange={(e) => setFormData({ ...formData, unidadMedida: e.target.value })}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+            label="Unidad de Medida"
+            placeholder="tableta(s), ml, etc."
+            value={formData.unidadMedida}
+            onChange={(e) => setFormData({ ...formData, unidadMedida: e.target.value })}
+            />
+
+            <Input
+            type="time"
+            label="Hora de Toma"
+            placeholder="00:00"
+            value={formData.hora}
+            onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
+            />
+        </div>
 
         <Input
           label="Frecuencia"

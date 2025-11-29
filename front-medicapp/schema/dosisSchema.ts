@@ -8,6 +8,7 @@ export const dosisSchema = z.object({
   descripcion: z.string().min(5, 'La descripción es muy corta (ej. "1 tableta cada 8 horas")'),
   unidadMedida: z.string().optional(),
   frecuencia: z.string().optional(),
+  hora: z.string().optional(),
 });
 
 export type DosisPayload = z.infer<typeof dosisSchema>;

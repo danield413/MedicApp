@@ -80,7 +80,8 @@ const dosisSchema = new Schema({
   cantidadDiaria: { type: Number, required: true },
   descripcion: { type: String, required: true },
   unidadMedida: { type: String },
-  frecuencia: { type: String }
+  frecuencia: { type: String },
+  hora: { type: String }
 }, { timestamps: true });
 
 // Schema de Fórmula Médica (sin cambios)
